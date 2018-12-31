@@ -1,1 +1,1 @@
-web: uvicorn -p 5000 --log-level debug app:app 
+web: uvicorn --port 5000 --log-level debug app:app
