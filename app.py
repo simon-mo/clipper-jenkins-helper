@@ -4,6 +4,7 @@ import re
 import tempfile
 from collections import defaultdict
 from typing import List
+import os
 
 import attr
 import jinja2
@@ -15,6 +16,11 @@ from starlette.responses import (FileResponse, HTMLResponse, JSONResponse,
                                  Response)
 
 app = Starlette()
+
+@app.on_event('startup')
+def startup():
+    import os
+    os.system("make bin/make2graph")
 
 regexs = {
     "log_line": re.compile(r"^ \[([\w-]+)\]", re.MULTILINE),
