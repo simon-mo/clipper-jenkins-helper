@@ -17,11 +17,6 @@ from starlette.responses import (FileResponse, HTMLResponse, JSONResponse,
 
 app = Starlette()
 
-@app.on_event('startup')
-def startup():
-    import os
-    os.system("make bin/makefile2graph")
-
 regexs = {
     "log_line": re.compile(r"^ \[([\w-]+)\]", re.MULTILINE),
     "finished_sign": re.compile(r"===== finished: ([\w-]+) =====", re.MULTILINE),

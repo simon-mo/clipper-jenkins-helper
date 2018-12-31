@@ -1,0 +1,12 @@
+setup:
+  config: {}
+build:
+  packages:
+    - build-essential
+    - graphviz
+  languages: 
+    - python
+  post:
+    - make bin/makefile2graph
+run:
+    web: uvicorn --host 0.0.0.0 --port $PORT app:app
