@@ -20,7 +20,7 @@ app = Starlette()
 @app.on_event('startup')
 def startup():
     import os
-    os.system("make bin/make2graph")
+    os.system("make bin/makefile2graph")
 
 regexs = {
     "log_line": re.compile(r"^ \[([\w-]+)\]", re.MULTILINE),
