@@ -1,5 +1,5 @@
 starlette[full]
 jinja2
 requests
-attr
+attrs
 uvicorn
