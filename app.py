@@ -1,10 +1,10 @@
 import asyncio
 import logging
+import os
 import re
 import tempfile
 from collections import defaultdict
 from typing import List
-import os
 
 import attr
 import jinja2
@@ -12,8 +12,7 @@ import requests
 import uvicorn
 from starlette.applications import Starlette
 from starlette.requests import Request
-from starlette.responses import (FileResponse, HTMLResponse, JSONResponse,
-                                 Response)
+from starlette.responses import FileResponse, HTMLResponse, JSONResponse, Response
 
 app = Starlette()
 
@@ -104,6 +103,14 @@ async def homepage(request: Request):
         elif form["routing"] == "logs":
             return await logs_render(jenkins_url, form["stage"])
     return FileResponse("index.html")
+
+
+@app.route("/logs/{stage}/{id}")
+async def get_log_page(request: Request):
+    jenkins_id = request.path_params["id"]
+    stage = request.path_params["stage"]
+    jenkins_url = f"https://amplab.cs.berkeley.edu/jenkins/job/Clipper-PRB/{jenkins_id}/consoleText"
+    return await logs_render(jenkins_url, stage)
 
 
 def get_makefile(stage):

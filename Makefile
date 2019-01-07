@@ -11,3 +11,6 @@ bin/makefile2graph:
 	rm -rf makefile2graph
 	ls bin
 
+format:
+	isort -i *
+	black .
