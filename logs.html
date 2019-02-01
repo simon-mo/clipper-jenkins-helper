@@ -29,7 +29,12 @@
     <!-- Button trigger modal -->
     <button
       type="button"
+      {% if log.failed %}
+      class="btn btn-danger"
+      {% else %}
       class="btn btn-primary"
+      {% endif %}
+
       data-toggle="modal"
       data-target="#example-{{ log.title }}"
     >

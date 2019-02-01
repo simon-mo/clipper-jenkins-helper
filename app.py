@@ -4,9 +4,8 @@ import os
 import re
 import tempfile
 from collections import defaultdict
-from typing import List
+from functools import total_ordering
 
-import attr
 import jinja2
 import requests
 import uvicorn
@@ -21,6 +20,7 @@ regexs = {
     "finished_sign": re.compile(r"===== finished: ([\w-]+) =====", re.MULTILINE),
     "dot_vertex": re.compile(r'label="([\w-]+)"'),
     "makefile_targets": re.compile(r"^([\w-]+):", re.MULTILINE),
+    "target_failed": re.compile(r"CI_[\w]+\.Makefile:[\d]+: recipe for target '([\w-]+)' failed", re.MULTILINE)
 }
 
 with open("makefiles/CI_build.Makefile") as build, open(
@@ -112,6 +112,17 @@ async def get_log_page(request: Request):
     jenkins_url = f"https://amplab.cs.berkeley.edu/jenkins/job/Clipper-PRB/{jenkins_id}/consoleText"
     return await logs_render(jenkins_url, stage)
 
+@app.route("/api/get_failed_logs/{id}")
+async def get_failed_logs(request: Request):
+    jenkins_id = request.path_params['id']
+    jenkins_url = f"https://amplab.cs.berkeley.edu/jenkins/job/Clipper-PRB/{jenkins_id}/consoleText"
+    text = requests.get(jenkins_url).text
+    logs = parse_logs(text)
+    failed_log = [l for l in logs if l.failed]
+
+    with open("failed_log.html") as f:
+        rendered = jinja2.Template(f.read()).render(logs=failed_log)
+    return HTMLResponse(rendered)
 
 def get_makefile(stage):
     return makefiles[stage]
@@ -125,11 +136,22 @@ async def svg_gen(jenkins_url, stage):
     )
     return Response(svg, media_type="image/svg+xml")
 
-
-@attr.s
+@total_ordering
 class LogEntry:
-    title: str = attr.ib()
-    lines: List[str] = attr.ib()
+    def __init__(self, title, lines, failed=False):
+        self.title = title
+        self.lines = lines
+        self.failed = failed
+    def __eq__(self, value):
+        return self.title == value.title
+
+    def __lt__(self, value):
+        if self.failed and not value.failed:
+            return True
+        elif not self.failed and value.failed:
+            return False
+        else:
+            return self.title < value.title
 
 
 def parse_logs(text):
@@ -143,15 +165,21 @@ def parse_logs(text):
         if len(found):
             tmp_collection[found[0]].append(l)
 
+    failed_entries = set(regexs['target_failed'].findall(text))
     lst = [LogEntry(t, lines) for t, lines in tmp_collection.items()]
-    return sorted(lst, key=lambda le: le.title)
+    for item in lst:
+        if item.title in failed_entries:
+            item.failed = True
+            print(item)
+    return lst
 
 
 async def logs_render(jenkins_url, stage):
     logging.info("Translating %s", jenkins_url)
     text = requests.get(jenkins_url).text
     logs = parse_logs(text)
-    logs = filter(lambda l: l.title in targets[stage], logs)
+    logs = list(filter(lambda l: l.title in targets[stage], logs))
+    logs = sorted(logs)
     with open("logs.html") as f:
         rendered = jinja2.Template(f.read()).render(logs=logs)
     return HTMLResponse(rendered)
