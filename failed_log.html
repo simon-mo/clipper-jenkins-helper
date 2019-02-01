@@ -1,0 +1,16 @@
+🤖 The following target failed:
+{% for log in logs %}
+🛑 {{ log.title }}
+{% endfor %}
+
+### Logs
+
+{% for log in logs %}
+<details>
+    <summary>{{ log.title }}</summary>
+    <pre>
+{{ "\n".join(log.lines) }}
+    </pre>
+</details>
+{% endfor %}
+
